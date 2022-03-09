@@ -1,5 +1,3 @@
-#This is our main file
-
 import simplegui
 
 #Importing the vector class
@@ -19,6 +17,9 @@ pos = ""
 mapScene = False
 fightScene = False
 
+#Boolean for fight scene
+CurrentTurn = True
+
 #This class handles the information of image objects, more attributes will be added as we code more image objects
 class ImageInfo:
     def __init__(self, center, size):
@@ -37,9 +38,15 @@ class Mouse:
         self.lastpos = None
    
     def mouse_handler(self, positionmouse):
+        global started
+
+        if (not started):
+            started = True
+            startGame()
+            
         self.lastpos = positionmouse
         
-    def click_pos(self):
+    def click_pos(self):  
         newpos = self.lastpos
         self.lastpos = None
         return newpos
@@ -178,13 +185,16 @@ skeletonPos = Vector(200, 200)
 fightButPos = Vector(200, 400)
 defendButPos = Vector(200, 460)
 
+#Create mouse object
+TheMouse = Mouse(Vector(0,0))
+
 #Handler to draw on canvas
 def draw(canvas):
     global started
     global mapScene
     global fightScene
     
-    if not started:
+    if (not started):
         # Drawing the splash screen on the canvas
         canvas.draw_image(splashImage, splashInfo.getCenter(), 
                           splashInfo.getSize(), [WIDTH/2, HEIGHT/2], 
@@ -219,14 +229,6 @@ def draw(canvas):
                           skeletonInfo.getSize())
         FightButton.checkClick(canvas)
         DefendButton.checkClick()
-    
-#Handler for a mouse click
-def click(pos):
-    global started
-
-    if (not started):
-        started = True
-        startGame()
 
 #Create a frame and assign callbacks to event handlers
 frame = simplegui.create_frame("Home", WIDTH, HEIGHT)
@@ -235,7 +237,7 @@ frame = simplegui.create_frame("Home", WIDTH, HEIGHT)
 frame.set_draw_handler(draw)
 
 #Register handler for mouse click events 
-frame.set_mouseclick_handler(click)
+frame.set_mouseclick_handler(TheMouse.mouse_handler)
 
 #Start the frame animation
 frame.start()

@@ -11,14 +11,11 @@ HEIGHT = 600
 started = False
 
 #This variable stores the position of a mouse click
-clicked = False
+pos = ""
 
 #Boolean variables to store status of gameplay
 mapScene = False
 fightScene = False
-
-#Variable for blue team's turn
-turnBlueTeam = True
 
 #Boolean for fight scene
 CurrentTurn = True
@@ -36,6 +33,7 @@ class ImageInfo:
         return self.size
     
 class Mouse:
+    
     def __init__(self, lastpos):
         self.lastpos = None
    
@@ -48,64 +46,10 @@ class Mouse:
             
         self.lastpos = positionmouse
         
-    def getPos(self):
-        return self.lastpos
-        
-    def click_pos(self):
+    def click_pos(self):  
         newpos = self.lastpos
         self.lastpos = None
-
         return newpos
-    
-class Keyboard:
-    def __init__(self):
-        self.right = False
-        self.left = False
-        self.up = False
-        self.down = False
-
-    def keyDown(self, key):
-        if turnBlueTeam == True:
-            if key == simplegui.KEY_MAP['right']:
-                self.right = True
-            elif key == simplegui.KEY_MAP['left']:
-                self.left = True
-            elif key == simplegui.KEY_MAP['up']:
-                self.up = True
-            elif key == simplegui.KEY_MAP['down']:
-                self.down = True    
-
-    def keyUp(self, key):
-        if key == simplegui.KEY_MAP['right']:
-            self.right = False
-        elif key == simplegui.KEY_MAP['left']:    
-            self.left = False
-        if key == simplegui.KEY_MAP['up']:
-            self.up = False
-        elif key == simplegui.KEY_MAP['down']:    
-            self.down = False
-            
-class Interaction:
-    def __init__(self, character, keyboard):
-        self.character = character
-        self.keyboard = keyboard
-
-    def update(self):
-        if self.keyboard.right:
-            # This will change depending on the movement value
-            self.character.position.add(Vector(self.character.getMovementValue(),0))
-            
-        elif self.keyboard.left:
-            # This will change depending on the movement value
-            self.character.position.subtract(Vector(self.character.getMovementValue(),0))   
-            
-        elif self.keyboard.up:
-            # This will change depending on the movement value
-            self.character.position.subtract(Vector(0,self.character.getMovementValue()))
-            
-        elif self.keyboard.down:
-            # This will change depending on the movement value
-            self.character.position.add(Vector(0,self.character.getMovementValue()))      
 
 class FightBut:
     
@@ -150,7 +94,7 @@ class DefendBut:
             else:
                 self.position = Vector(200, 400)         
                 
-class FightSceneChracter:
+class character:
     
     def __init__(self, initialPos, Info, TheMouse):
         self.position = initialPos
@@ -198,12 +142,6 @@ class Character:
     def getstats(self):
         Number1, Number2, Number3 = self.CharacterType.getclass()
         return self.health, Number1, Number2, Number3
-    
-    def getPos(self):
-        return self.position
-    
-    def getMovementValue(self):
-        return self.CharacterType.movement
 
     def move(self, newposition):
         self.position = newposition
@@ -211,22 +149,17 @@ class Character:
     def fight(self, opponent):
         self.health = self.health
         
-        
 def startGame():
     global mapScene
     global fightScene
     
     mapScene = True
-    
-    #if turnBlueTeam == True:
-        #inter = Interaction(BlueTeamWarrior1, kbd)
         
 #Character objects
 Warrior = Classes("Warrior", 3, 2, 3)
 Knight = Classes ("Knight", 3, 4, 2)
-BlueTeamWarrior1 = Character(Warrior, 10, Vector(200,145))
-RedTeamWarrior1 = Character(Warrior, 10, Vector(0,0))
-BlueTeamKnight1 = Character(Knight, 10, Vector(0,0))
+RedTeamWarrior1 = (Warrior, 10, (0,0))
+BlueTeamKnight1 = (Knight, 10, (0,0))
 
 #Menu assets
 splashImage = simplegui.load_image("https://i.imgur.com/tNLif1i.png")
@@ -240,20 +173,12 @@ defendButton = simplegui.load_image("https://i.imgur.com/K5TFMgE.png")
 battleBackground = simplegui.load_image("https://i.imgur.com/PK0x3nV.png")
 skeleton = simplegui.load_image("https://i.imgur.com/EYRg0xO.png")
 
-#Warrior Assets
-blueTeamWarriorImage = simplegui.load_image("https://i.imgur.com/mXxjpIl.png")
-
-#Knight Assets
-
-
 #Image information of image objects
 buttonInfo = ImageInfo([75, 25], [150, 50])
 backgroundInfo = ImageInfo([400, 300], [800, 600])
 skeletonInfo = ImageInfo([97.5, 100], [195, 200])
 splashInfo = ImageInfo([400, 300], [800, 600])
 mapInfo = ImageInfo([400, 300], [800, 600])
-
-blueTeamWarriorInfo = ImageInfo([55,50], [110,100])
 
 #Initialising positions
 skeletonPos = Vector(200, 200)
@@ -263,15 +188,11 @@ defendButPos = Vector(200, 460)
 #Create mouse object
 TheMouse = Mouse(Vector(0,0))
 
-#Create keyboard object
-kbd = Keyboard()
-
 #Handler to draw on canvas
 def draw(canvas):
     global started
     global mapScene
     global fightScene
-    global turnBlueTeam
     
     if (not started):
         # Drawing the splash screen on the canvas
@@ -280,21 +201,10 @@ def draw(canvas):
                           splashInfo.getSize())
 
     if mapScene == True:
-        
-        # inter.update() is needed to update the position of the character
-        inter.update()
- 
-        # Drawing the map
         canvas.draw_image(mapImage, mapInfo.getCenter(), 
                           mapInfo.getSize(), [WIDTH/2, HEIGHT/2], 
                           mapInfo.getSize())
         
-        # Drawing Blue Team Characters
-        # Temporary sprite to show warrior moving
-        canvas.draw_image(blueTeamWarriorImage, blueTeamWarriorInfo.getCenter(), 
-                          blueTeamWarriorInfo.getSize(), BlueTeamWarrior1.getPos().get_p(),
-                          [55,50])
-            
     if fightScene == True:
         if CurrentTurn == True:
             DefendButton.updatePos([200, 460])
@@ -329,14 +239,5 @@ frame.set_draw_handler(draw)
 #Register handler for mouse click events 
 frame.set_mouseclick_handler(TheMouse.mouse_handler)
 
-frame.set_keydown_handler(kbd.keyDown)
-
-frame.set_keyup_handler(kbd.keyUp)
-
 #Start the frame animation
 frame.start()
-
-#Interactions
-inter = Interaction(BlueTeamWarrior1, kbd)
-
-

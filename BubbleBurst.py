@@ -427,8 +427,8 @@ class Game:
     # When the frame is on, the soundtrack will play         
     def frameCheck():
         if Game.frame.get_canvas_textwidth("BubbleBurst", 100) == 0:
-            soundtrack.pause()
-            frame_timer.stop()
+            Game.soundtrack.pause()
+            Game.frame_timer.stop()
 
     # Initialisation of the submarine object
     theSubmarine = Player([WIDTH / 2, HEIGHT / 2], [0, 0], 0, \

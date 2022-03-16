@@ -241,7 +241,8 @@ class Game:
             self.started = False
             self.score = score
             self.oxygen = 10
-            self.oxygenLose = 1500
+            self.oxygenLoseCurrent = 0
+            self.oxygenLose = 100
             self.alarmCooldown = False
             self.lives = 3
             self.backgroundTime = 0.5
@@ -342,9 +343,11 @@ class Game:
                 Game.game.difficulty += .15
                 if Game.game.oxygen < 10:
                     Game.game.oxygen += 1
-                Game.game.oxygenLose = 1500 - (Game.game.score * 10)
-                if Game.game.oxygenLose < 1000:
-                    Game.game.oxygenLose = 1000
+                Game.game.oxygenLose = 100 - (Game.game.score)
+                if Game.game.oxygenLose < 70:
+                    Game.game.oxygenLose = 70
+
+                
                 
                     
             if Game.game.oxygen < 4:
@@ -376,14 +379,19 @@ class Game:
             
         def oxygenDecrease():
             if Game.game.started:
-                if Game.game.oxygen == 0:
-                    Game.game.lives -= 1
-                    Game.game.oxygen = 10
-                Game.game.oxygen -= 1
+                if Game.game.oxygenLoseCurrent < Game.game.oxygenLose:
+                    Game.game.oxygenLoseCurrent += 1
+                else:
+                    Game.game.oxygenLoseCurrent = 0
+                    if Game.game.oxygen == 0:
+                        Game.game.lives -= 1
+                        Game.game.oxygen = 10
+                    Game.game.oxygen -= 1
                 
         def resetAlarm():
             Game.game.alarmCooldown = False
             Game.alarm_cooldown_timer.stop()
+            
             
             
        
@@ -487,7 +495,9 @@ class Game:
     instructionsText = "Instructions:"
     frameTextOne = "Use your keyboard arrows to move the submarine"
     frameTextTwo = "Use the spacebar to shoot bubbles"
-    frameTextThree = "Have fun and thank you for playing!"
+    frameTextThree = "Pop bubbles to increase your oxygen. Make sure you don't run out!"
+    frameTextFour = "Have fun and thank you for playing!"
+    
 
     # Adding text to the frame
     frame.add_label(instructionsText, 140)
@@ -497,6 +507,8 @@ class Game:
     frame.add_label(frameTextTwo, 140)
     frame.add_label("", 140)
     frame.add_label(frameTextThree, 140)
+    frame.add_label("", 140)
+    frame.add_label(frameTextFour, 140)
     
     # Initialising game 
     game = Interaction()
@@ -510,7 +522,7 @@ class Game:
     # Timers to spawn the bubbles and pause/play sounds and soundtrack
     timer = simplegui.create_timer(1000.0, Interaction.bubbleSpawner)
     frame_timer = simplegui.create_timer(1000, frameCheck)
-    oxygen_timer = simplegui.create_timer(game.oxygenLose, Interaction.oxygenDecrease)
+    oxygen_timer = simplegui.create_timer(10, Interaction.oxygenDecrease)
     alarm_cooldown_timer = simplegui.create_timer(4000, Interaction.resetAlarm)
 
     # Starting the frame

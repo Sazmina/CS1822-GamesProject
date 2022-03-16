@@ -20,6 +20,7 @@ class Game:
             return math.sqrt((p[0] - q[0]) ** 2+(p[1] - q[1]) ** 2)
 
         # Function to handle transformations
+        
         def convertAngleToVector(ang):
             return [math.cos(ang), math.sin(ang)]
         
@@ -239,9 +240,13 @@ class Game:
             self.waterBulletsGroup = set([]) 
             self.started = False
             self.score = score
+            self.oxygen = 10
+            self.oxygenLose = 1500
+            self.alarmCooldown = False
             self.lives = 3
             self.backgroundTime = 0.5
             self.difficulty = 0
+            
             
         # Handler that spawns a bubble    
         def bubbleSpawner(): 
@@ -335,6 +340,26 @@ class Game:
             if Game.Interaction.collisionBetweenGroups(self.waterBulletsGroup, self.bubbleGroup):
                 Game.game.score += 1
                 Game.game.difficulty += .15
+                if Game.game.oxygen < 10:
+                    Game.game.oxygen += 1
+                Game.game.oxygenLose = 1500 - (Game.game.score * 10)
+                if Game.game.oxygenLose < 1000:
+                    Game.game.oxygenLose = 1000
+                
+                    
+            if Game.game.oxygen < 4:
+                canvas.draw_text("OXYGEN LOW!", [415, 90], 24, "Red")
+                if Game.game.alarmCooldown == False:
+                    Game.lowOxygenSound.play()
+                    Game.game.alarmCooldown = True
+                    Game.alarm_cooldown_timer.start()
+                    
+            
+            for i in range(Game.game.oxygen):
+                canvas.draw_image(Game.oxygenBubbleImg, Game.oxygenBubbleInfo.getCenter(),
+                                Game.oxygenBubbleInfo.getSize(), Game.oxygenMeter[i], [30, 30])
+            
+                
 
             # If the game has not started, the splash screen is drawn
             if not self.started:
@@ -345,8 +370,22 @@ class Game:
             # Drawing Lives and Score Text
             canvas.draw_text("Lives", [45, 50], 24, "White")
             canvas.draw_text("Score", [875, 50], 24, "White")
+            canvas.draw_text("Oxygen:", [455, 25], 24, "White")
             canvas.draw_text(str(self.lives), [45, 80], 24, "White")
             canvas.draw_text(str(self.score), [875, 80], 24, "White")
+            
+        def oxygenDecrease():
+            if Game.game.started:
+                if Game.game.oxygen == 0:
+                    Game.game.lives -= 1
+                    Game.game.oxygen = 10
+                Game.game.oxygen -= 1
+                
+        def resetAlarm():
+            Game.game.alarmCooldown = False
+            Game.alarm_cooldown_timer.stop()
+            
+            
        
     # Mouse handler
     # The game is reset when the splash screen is drawn
@@ -360,6 +399,7 @@ class Game:
             Game.game.started = True
             Game.game.lives = 3
             Game.game.score = 0
+            Game.game.oxygen = 10
             Game.game.difficulty = 0
             Game.soundtrack.play()
             theSubmarine = Game.Player([Game.WIDTH / 2, Game.HEIGHT / 2], [0, 0], 0, \
@@ -404,7 +444,9 @@ class Game:
 
     secondBubbleBurstInfo = SpriteInfo([50, 50], [100, 100], 1, 81, True, 9)
     secondBubbleBurstImg = simplegui.load_image("https://i.imgur.com/SE1aa51.png")
-
+    
+    oxygenBubbleInfo = SpriteInfo([37, 37], [75, 75], 40)
+    oxygenBubbleImg = simplegui.load_image("https://i.imgur.com/n4kEMkT.png")
     """
     Sound Track Assets
     Credits are given where necessary
@@ -423,6 +465,9 @@ class Game:
 
     # CREDIT: https://mixkit.co
     bubbleBurstSound = simplegui.load_sound("https://www.mboxdrive.com/QKTA234-pop.mp3")
+    
+    # CREDIT: https://mixkit.co
+    lowOxygenSound = simplegui.load_sound("https://www.mboxdrive.com/Ship-alarm.mp3")
 
     # When the frame is on, the soundtrack will play         
     def frameCheck():
@@ -433,6 +478,9 @@ class Game:
     # Initialisation of the submarine object
     theSubmarine = Player([WIDTH / 2, HEIGHT / 2], [0, 0], 0, \
                    submarineImg, submarineInfo, submarineEngineSound)
+    
+    oxygenMeter = [[365, 50], [395, 50], [425, 50], [455, 50], [485, 50],
+                   [515, 50], [545, 50], [575, 50], [605, 50], [635, 50]]
 
     # Initialising text to add to the frame
     frame = simplegui.create_frame("BubbleBurst", WIDTH, HEIGHT)
@@ -462,8 +510,11 @@ class Game:
     # Timers to spawn the bubbles and pause/play sounds and soundtrack
     timer = simplegui.create_timer(1000.0, Interaction.bubbleSpawner)
     frame_timer = simplegui.create_timer(1000, frameCheck)
+    oxygen_timer = simplegui.create_timer(game.oxygenLose, Interaction.oxygenDecrease)
+    alarm_cooldown_timer = simplegui.create_timer(4000, Interaction.resetAlarm)
 
     # Starting the frame
     frame.start()
     timer.start()
     frame_timer.start()
+    oxygen_timer.start()

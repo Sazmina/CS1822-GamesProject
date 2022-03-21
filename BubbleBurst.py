@@ -1,5 +1,6 @@
 """
 BubbleBurst
+CS1822 Python Games Project
 Authors: Sazmina Sandia, Davit Gevorgyan, Ahmed Hassan and Joseph Salter
 Royal Holloway, University of London
 """
@@ -14,16 +15,6 @@ class Game:
     WIDTH = 1000
     HEIGHT = 750
     
-    class Vector:
-        # Function to determine the calculate distance between two objects
-        def calculateDistance(p,q):
-            return math.sqrt((p[0] - q[0]) ** 2+(p[1] - q[1]) ** 2)
-
-        # Function to handle transformations
-        
-        def convertAngleToVector(ang):
-            return [math.cos(ang), math.sin(ang)]
-        
     # Class to store information about sprite images
     class SpriteInfo:
         def __init__(self, centerOfSprite, sizeOfSprite, radiusOfSprite = 0, lifespan = None, animated = False, grid = None):
@@ -54,6 +45,75 @@ class Game:
 
         def getLifespan(self):
             return self.lifespan
+    
+    
+    # Class to store information about sprite objects
+    class Sprite:
+        def __init__(self, pos, vel, ang, ang_vel, image, info, sound = None):
+            self.pos = [pos[0],pos[1]]
+            self.vel = [vel[0],vel[1]]
+            self.angle = ang
+            self.angleVelocity = ang_vel
+            self.image = image
+            self.imageCenter = info.getCenter()
+            self.imageCenterTemp = info.getCenter()
+            self.imageSize = info.getSize()
+            self.radius = info.getRadius()
+            self.lifespan = info.getLifespan()
+            self.grid = info.getGrid()
+            self.animated = info.getAnimated()
+            self.age = 0
+            if sound:
+                sound.rewind()
+                sound.play()
+
+        def getImage(self):
+            return self.image
+
+        def getCenter(self):
+            return self.imageCenter
+
+        def getPosition(self):
+            return self.pos        
+
+        def getVelocity(self):
+            return self.vel
+
+        def getRadius(self):
+            return self.radius  
+
+        # Check for any collisions
+        def collide(self, otherObj):
+            if Game.Vector.calculateDistance(self.pos, otherObj.pos) <= self.radius + otherObj.getRadius():
+                return True
+            False
+
+        def draw(self, canvas):
+            horizontalOffset, verticalOffset = 0, 0
+            if self.animated:
+                horizontalOffset = self.imageSize[0] * (self.age % self.grid)
+                verticalOffset = self.imageSize[1] * (self.age // self.grid)
+
+            canvas.draw_image(self.image, [self.imageCenter[0] + horizontalOffset, \
+                                           self.imageCenter[1] + verticalOffset], \
+                              self.imageSize, self.pos, self.imageSize, self.angle)
+
+        def update(self):
+            # Update the age
+            self.age += 1
+
+            # Return condition of object's life
+            if self.age > self.lifespan:
+                return True
+            False
+
+            # Update the angle
+            self.angle += self.angleVelocity
+
+            # Update the position
+            self.pos[0] = ((self.vel[0] + self.pos[0]) % Game.WIDTH)
+            self.pos[1] = ((self.vel[1] + self.pos[1]) % Game.HEIGHT)
+
 
     # Class to initialise submarine object
     class Player:
@@ -146,7 +206,6 @@ class Game:
             canvas.draw_image(self.image, imageCenter, self.imageSize, self.pos, self.imageSize, self.angle)
 
         def update(self):
-            # I DONT KNOW IF YOU NEED THIS ANYMORE!!!!!
             global forward_vector
 
             # Update the angle
@@ -166,73 +225,6 @@ class Game:
             self.pos[1] = ((self.vel[1] + self.pos[1]) % Game.HEIGHT)
 
 
-    class Sprite:
-        def __init__(self, pos, vel, ang, ang_vel, image, info, sound = None):
-            self.pos = [pos[0],pos[1]]
-            self.vel = [vel[0],vel[1]]
-            self.angle = ang
-            self.angleVelocity = ang_vel
-            self.image = image
-            self.imageCenter = info.getCenter()
-            self.imageCenterTemp = info.getCenter()
-            self.imageSize = info.getSize()
-            self.radius = info.getRadius()
-            self.lifespan = info.getLifespan()
-            self.grid = info.getGrid()
-            self.animated = info.getAnimated()
-            self.age = 0
-            if sound:
-                sound.rewind()
-                sound.play()
-
-        def getImage(self):
-            return self.image
-
-        def getCenter(self):
-            return self.imageCenter
-
-        def getPosition(self):
-            return self.pos        
-
-        def getVelocity(self):
-            return self.vel
-
-        def getRadius(self):
-            return self.radius  
-
-        # Check for any collisions
-        def collide(self, otherObj):
-            if Game.Vector.calculateDistance(self.pos, otherObj.pos) <= self.radius + otherObj.getRadius():
-                return True
-            False
-
-        def draw(self, canvas):
-            horizontalOffset, verticalOffset = 0, 0
-            if self.animated:
-                horizontalOffset = self.imageSize[0] * (self.age % self.grid)
-                verticalOffset = self.imageSize[1] * (self.age // self.grid)
-
-            canvas.draw_image(self.image, [self.imageCenter[0] + horizontalOffset, \
-                                           self.imageCenter[1] + verticalOffset], \
-                              self.imageSize, self.pos, self.imageSize, self.angle)
-
-        def update(self):
-            # Update the age
-            self.age += 1
-
-            # Return condition of object's life
-            if self.age > self.lifespan:
-                return True
-            False
-
-            # Update the angle
-            self.angle += self.angleVelocity
-
-            # Update the position
-            self.pos[0] = ((self.vel[0] + self.pos[0]) % Game.WIDTH)
-            self.pos[1] = ((self.vel[1] + self.pos[1]) % Game.HEIGHT)
-            
-
     class Interaction:
         def __init__(self, score=0):
             self.bubbleGroup = set([])
@@ -247,7 +239,6 @@ class Game:
             self.lives = 3
             self.backgroundTime = 0.5
             self.difficulty = 0
-            
             
         # Handler that spawns a bubble    
         def bubbleSpawner(): 
@@ -303,7 +294,6 @@ class Game:
                     return True
                 return False
            
-
         def draw(self, canvas):
             global lives, backgroundTime, score, bubbleGroup, bubbleBurstGroup, started, difficulty
 
@@ -347,9 +337,6 @@ class Game:
                 if Game.game.oxygenLose < 70:
                     Game.game.oxygenLose = 70
 
-                
-                
-                    
             if Game.game.oxygen < 4:
                 canvas.draw_text("OXYGEN LOW!", [415, 90], 24, "Red")
                 if Game.game.alarmCooldown == False:
@@ -362,8 +349,6 @@ class Game:
                 canvas.draw_image(Game.oxygenBubbleImg, Game.oxygenBubbleInfo.getCenter(),
                                 Game.oxygenBubbleInfo.getSize(), Game.oxygenMeter[i], [30, 30])
             
-                
-
             # If the game has not started, the splash screen is drawn
             if not self.started:
                 canvas.draw_image(Game.splashScreenImg, Game.splashScreenInfo.getCenter(), 
@@ -391,10 +376,18 @@ class Game:
         def resetAlarm():
             Game.game.alarmCooldown = False
             Game.alarm_cooldown_timer.stop()
-            
-            
-            
-       
+    
+    
+    class Vector:
+        # Function to determine the calculate distance between two objects
+        def calculateDistance(p,q):
+            return math.sqrt((p[0] - q[0]) ** 2+(p[1] - q[1]) ** 2)
+
+        # Function to handle transformations
+        def convertAngleToVector(ang):
+            return [math.cos(ang), math.sin(ang)]      
+
+        
     # Mouse handler
     # The game is reset when the splash screen is drawn
     def click(pos):
@@ -412,7 +405,8 @@ class Game:
             Game.soundtrack.play()
             theSubmarine = Game.Player([Game.WIDTH / 2, Game.HEIGHT / 2], [0, 0], 0, \
                                   Game.submarineImg, Game.submarineInfo, Game.submarineEngineSound)
-            
+    
+    
     """
     Assets for the game
     Credits are given where necessary
@@ -455,6 +449,8 @@ class Game:
     
     oxygenBubbleInfo = SpriteInfo([37, 37], [75, 75], 40)
     oxygenBubbleImg = simplegui.load_image("https://i.imgur.com/n4kEMkT.png")
+    
+    
     """
     Sound Track Assets
     Credits are given where necessary
@@ -497,7 +493,6 @@ class Game:
     frameTextTwo = "Use the spacebar to shoot bubbles"
     frameTextThree = "Pop bubbles to increase your oxygen. Make sure you don't run out!"
     frameTextFour = "Have fun and thank you for playing!"
-    
 
     # Adding text to the frame
     frame.add_label(instructionsText, 140)

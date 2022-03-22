@@ -50,8 +50,8 @@ class Game:
     # Class to store information about sprite objects
     class Sprite:
         def __init__(self, pos, vel, ang, ang_vel, image, info, sound = None):
-            self.pos = [pos[0],pos[1]]
-            self.vel = [vel[0],vel[1]]
+            self.pos = pos
+            self.vel = vel
             self.angle = ang
             self.angleVelocity = ang_vel
             self.image = image
@@ -96,7 +96,7 @@ class Game:
 
             canvas.draw_image(self.image, [self.imageCenter[0] + horizontalOffset, \
                                            self.imageCenter[1] + verticalOffset], \
-                              self.imageSize, self.pos, self.imageSize, self.angle)
+                              self.imageSize, self.pos.get_p(), self.imageSize, self.angle)
 
         def update(self):
             # Update the age
@@ -111,15 +111,15 @@ class Game:
             self.angle += self.angleVelocity
 
             # Update the position
-            self.pos[0] = ((self.vel[0] + self.pos[0]) % Game.WIDTH)
-            self.pos[1] = ((self.vel[1] + self.pos[1]) % Game.HEIGHT)
+            self.pos.x = ((self.vel.x + self.pos.x) % Game.WIDTH)
+            self.pos.y = ((self.vel.y + self.pos.y) % Game.HEIGHT)
 
 
     # Class to initialise submarine object
     class Player:
         def __init__(self, positionOfSubmarine, velOfSubmarine, angleOfSubmarine, image, info, sound = None):
-            self.pos = [positionOfSubmarine[0],positionOfSubmarine[1]]
-            self.vel = [velOfSubmarine[0], velOfSubmarine[1]]
+            self.pos = positionOfSubmarine
+            self.vel = velOfSubmarine
             self.thrust = False
             self.angle = angleOfSubmarine
             self.angleVelocity = 0
@@ -140,10 +140,10 @@ class Game:
             return self.radius
 
         def rotateLeft(self):
-            self.angleVelocity = -.05
+            self.angleVelocity = -.06
 
         def rotateRight(self):
-            self.angleVelocity = .05
+            self.angleVelocity = .06
 
         def rotateStop(self):
             self.angleVelocity = 0
@@ -160,8 +160,8 @@ class Game:
 
         # Function to handle water bullets
         def shoot(self, waterBulletNum):
-            waterBulletPosition = [self.pos[0] + self.radius * Game.forward_vector[0], self.pos[1] + self.radius * Game.forward_vector[1]]
-            waterBulletVelocity = [self.vel[0] + (5 * Game.forward_vector[0]), self.vel[1] + (5 * Game.forward_vector[1])]
+            waterBulletPosition = Game.Vector(self.pos.x + self.radius * Game.forward_vector.x, self.pos.y + self.radius * Game.forward_vector.y)
+            waterBulletVelocity = Game.Vector(self.vel.x + (6 * Game.forward_vector.x), self.vel.y + (6 * Game.forward_vector.y))
             bullets = Game.waterBulletsImg
             bulletsInfo = Game.waterBulletsInfo
 
@@ -203,7 +203,7 @@ class Game:
             else:
                 imageCenter = self.imageCenter
 
-            canvas.draw_image(self.image, imageCenter, self.imageSize, self.pos, self.imageSize, self.angle)
+            canvas.draw_image(self.image, imageCenter, self.imageSize, self.pos.get_p(), self.imageSize, self.angle)
 
         def update(self):
             global forward_vector
@@ -213,16 +213,16 @@ class Game:
 
             # Update the velocity
             Game.forward_vector = Game.Vector.convertAngleToVector(self.angle)
-            self.vel[0] *= .985
-            self.vel[1] *= .985
+            self.vel.x *= .975
+            self.vel.y *= .975
 
             if self.thrust:
-                self.vel[0] += (Game.forward_vector[0]) * .11
-                self.vel[1] += (Game.forward_vector[1]) * .11
+                self.vel.x += (Game.forward_vector.x) * .10
+                self.vel.y += (Game.forward_vector.y) * .10
 
             # Update the position
-            self.pos[0] = ((self.vel[0] + self.pos[0]) % Game.WIDTH)
-            self.pos[1] = ((self.vel[1] + self.pos[1]) % Game.HEIGHT)
+            self.pos.x = ((self.vel.x + self.pos.x) % Game.WIDTH)
+            self.pos.y = ((self.vel.y + self.pos.y) % Game.HEIGHT)
 
 
     class Interaction:
@@ -244,13 +244,13 @@ class Game:
         def bubbleSpawner(): 
 
             if Game.game.started:
-                bubblePosition = [random.randrange(0, Game.WIDTH), random.randrange(0, Game.HEIGHT)]
-                bubbleVelocity = [random.random() * (.6 + Game.game.difficulty) - (.3 + Game.game.difficulty),
-                            random.random() * (.6 + Game.game.difficulty) - (.3 + Game.game.difficulty)]
+                bubblePosition = Game.Vector(random.randrange(0, Game.WIDTH), random.randrange(0, Game.HEIGHT))
+                bubbleVelocity = Game.Vector(random.random() * (.8 + Game.game.difficulty) - (.2 + Game.game.difficulty),
+                            random.random() * (.8 + Game.game.difficulty) - (.2 + Game.game.difficulty))
                 newBubbleVelocity = random.random() * .2 - .1
                 bubbleNum = random.randint(0, 2)
                 newBubble = Game.Sprite(bubblePosition, bubbleVelocity, 0, newBubbleVelocity, Game.bubbleImg, Game.bubbleInfo)
-                if len(Game.game.bubbleGroup) < 10 and Game.Vector.calculateDistance(bubblePosition, Game.theSubmarine.pos) > (newBubble.radius + Game.theSubmarine.radius) * 1.5:
+                if len(Game.game.bubbleGroup) < 10 and bubblePosition.subtract(Game.theSubmarine.pos).x > (newBubble.radius + Game.theSubmarine.radius) * 1.5:
                     Game.game.bubbleGroup.add(newBubble)
         
         # Function to handle a group of sprites, deleting them once they have been processed
@@ -313,8 +313,7 @@ class Game:
             canvas.draw_image(Game.backgroundBubblesImg, center, size, (wtime + Game.WIDTH / 2, Game.HEIGHT / 2), (Game.WIDTH, Game.HEIGHT))
 
             # Draw submarine
-            if self.lives > 0:
-                Game.theSubmarine.draw(canvas)
+            Game.theSubmarine.draw(canvas)
 
             # Update submarine
             Game.theSubmarine.update()
@@ -377,15 +376,48 @@ class Game:
             Game.game.alarmCooldown = False
             Game.alarm_cooldown_timer.stop()
     
-    
+    # Vector class
     class Vector:
+        
+        # Initialiser
+        def __init__(self, x=0, y=0):
+            self.x = x
+            self.y = y
+
+        # Returns a tuple with the point corresponding to the vector
+        def get_p(self):
+            return (self.x, self.y)
+
+        # Adds another vector to this vector
+        def add(self, other):
+            self.x += other.x
+            self.y += other.y
+            return self
+
+        def __add__(self, other):
+            return self.copy().add(other)
+
+        # Subtracts another vector from this vector
+        def subtract(self, other):
+            x = self.x - other.x
+            y = self.y - other.y
+            return self
+
+        def __sub__(self, other):
+            return self.copy().subtract(other)
+
+        # Returns the length of the vector
+        def length(self):
+            return math.sqrt(self.x**2 + self.y**2)
+
         # Function to determine the calculate distance between two objects
         def calculateDistance(p,q):
-            return math.sqrt((p[0] - q[0]) ** 2+(p[1] - q[1]) ** 2)
-
+            distance = Game.Vector(p.x - q.x, p.y - q.y)
+            return distance.length()
+            
         # Function to handle transformations
         def convertAngleToVector(ang):
-            return [math.cos(ang), math.sin(ang)]      
+            return Game.Vector(math.cos(ang), math.sin(ang))      
 
         
     # Mouse handler
@@ -432,8 +464,8 @@ class Game:
     submarineCrashImg = simplegui.load_image("https://i.imgur.com/jKiwLOt.png")
 
     # Water Bullets Asset
-    waterBulletsInfo = SpriteInfo([5,5], [10, 10], 3, 50)
-    waterBulletsImg = simplegui.load_image("https://i.imgur.com/qSX8rdE.png")
+    waterBulletsInfo = SpriteInfo([9,9], [18, 18], 3, 50)
+    waterBulletsImg = simplegui.load_image("https://i.imgur.com/PFKbZw7.png")
 
     # Bubble Asset
     # CREDIT: https://www.dreamstime.com
@@ -455,7 +487,6 @@ class Game:
     Sound Track Assets
     Credits are given where necessary
     """
-
     # CREDIT: JuliusH @ https://pixabay.com
     soundtrack = simplegui.load_sound("https://www.mboxdrive.com/magic-pearl.mp3")
 
@@ -480,7 +511,7 @@ class Game:
             Game.frame_timer.stop()
 
     # Initialisation of the submarine object
-    theSubmarine = Player([WIDTH / 2, HEIGHT / 2], [0, 0], 0, \
+    theSubmarine = Player(Vector(WIDTH/2, HEIGHT/2), Vector(0, 0), 0, \
                    submarineImg, submarineInfo, submarineEngineSound)
     
     oxygenMeter = [[365, 50], [395, 50], [425, 50], [455, 50], [485, 50],

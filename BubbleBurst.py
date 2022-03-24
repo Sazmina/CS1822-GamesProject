@@ -50,10 +50,6 @@ class Game:
     # Class to store information about sprite objects
     class Sprite:
         def __init__(self, pos, vel, ang, ang_vel, image, info, sound = None):
-            self.pos = pos
-            self.vel = vel
-            self.angle = ang
-            self.angleVelocity = ang_vel
             self.image = image
             self.imageCenter = info.getCenter()
             self.imageCenterTemp = info.getCenter()
@@ -62,11 +58,21 @@ class Game:
             self.lifespan = info.getLifespan()
             self.grid = info.getGrid()
             self.animated = info.getAnimated()
+            self.pos = pos
+            self.vel = vel
+            self.angle = ang
+            self.angleVelocity = ang_vel
             self.age = 0
             if sound:
                 sound.rewind()
-                sound.play()
+                sound.play()      
 
+        def getVelocity(self):
+            return self.vel
+
+        def getRadius(self):
+            return self.radius  
+        
         def getImage(self):
             return self.image
 
@@ -74,29 +80,13 @@ class Game:
             return self.imageCenter
 
         def getPosition(self):
-            return self.pos        
-
-        def getVelocity(self):
-            return self.vel
-
-        def getRadius(self):
-            return self.radius  
+            return self.pos
 
         # Check for any collisions
         def collide(self, otherObj):
             if Game.Vector.calculateDistance(self.pos, otherObj.pos) <= self.radius + otherObj.getRadius():
                 return True
             False
-
-        def draw(self, canvas):
-            horizontalOffset, verticalOffset = 0, 0
-            if self.animated:
-                horizontalOffset = self.imageSize[0] * (self.age % self.grid)
-                verticalOffset = self.imageSize[1] * (self.age // self.grid)
-
-            canvas.draw_image(self.image, [self.imageCenter[0] + horizontalOffset, \
-                                           self.imageCenter[1] + verticalOffset], \
-                              self.imageSize, self.pos.get_p(), self.imageSize, self.angle)
 
         def update(self):
             # Update the age
@@ -113,22 +103,41 @@ class Game:
             # Update the position
             self.pos.x = ((self.vel.x + self.pos.x) % Game.WIDTH)
             self.pos.y = ((self.vel.y + self.pos.y) % Game.HEIGHT)
+            
+        def draw(self, canvas):
+            verticalOffset, horizontalOffset = 0, 0
+            if self.animated:
+                horizontalOffset = self.imageSize[0]*(self.age%self.grid)
+                verticalOffset = self.imageSize[1]*(self.age // self.grid)
+
+            canvas.draw_image(self.image, [self.imageCenter[0] + horizontalOffset, \
+                                           self.imageCenter[1] + verticalOffset], \
+                              self.imageSize, self.pos.get_p(), self.imageSize, self.angle)
 
 
     # Class to initialise submarine object
     class Player:
         def __init__(self, positionOfSubmarine, velOfSubmarine, angleOfSubmarine, image, info, sound = None):
-            self.pos = positionOfSubmarine
-            self.vel = velOfSubmarine
-            self.thrust = False
-            self.angle = angleOfSubmarine
-            self.angleVelocity = 0
             self.image = image
             self.imageCenter = info.getCenter()
             self.imageCenterThrust = (info.getCenter()[0] * 3, info.getCenter()[1])
             self.imageSize = info.getSize()
             self.radius = info.getRadius()
             self.sound = sound
+            self.pos = positionOfSubmarine
+            self.vel = velOfSubmarine
+            self.thrust = False
+            self.angle = angleOfSubmarine
+            self.angleVelocity = 0
+            
+        def rotateLeft(self):
+            self.angleVelocity = -.06
+
+        def rotateRight(self):
+            self.angleVelocity = .06
+
+        def rotateStop(self):
+            self.angleVelocity = 0
 
         def getPosition(self):
             return self.pos
@@ -138,15 +147,6 @@ class Game:
 
         def getRadius(self):
             return self.radius
-
-        def rotateLeft(self):
-            self.angleVelocity = -.06
-
-        def rotateRight(self):
-            self.angleVelocity = .06
-
-        def rotateStop(self):
-            self.angleVelocity = 0
 
         def submarineEngineOn(self):
             self.thrust = True
